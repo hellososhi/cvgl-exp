@@ -9,8 +9,8 @@ class PoseData:
     """姿勢データを表すシンプルなコンテナ。
 
     attributes:
-            keypoints: numpy.ndarray (N, 3) 形式で各キーポイントの (x, y, v)
-                    x,y は画像座標（ピクセル）を想定。v は可視性/存在フラグ。
+            keypoints: numpy.ndarray (N, 4) 形式で各キーポイントの (x, y, z, v)
+                    x,y は画像座標（ピクセル）を想定。z は深度情報（x でスケーリング）、v は可視性/存在フラグ。
             image_size: Tuple[int, int] 元の画像サイズ (width, height)
     """
 

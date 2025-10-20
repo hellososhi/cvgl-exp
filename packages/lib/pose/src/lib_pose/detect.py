@@ -11,7 +11,7 @@ from .data import PoseData
 
 
 def _landmarks_to_keypoints(landmarks, image_size: Tuple[int, int]) -> np.ndarray:
-    """MediaPipe の landmarks を (N,3) の配列に変換する内部ヘルパー。
+    """MediaPipe の landmarks を (N,4) の配列に変換する内部ヘルパー。
 
     image_size: (width, height)
     """
@@ -20,8 +20,9 @@ def _landmarks_to_keypoints(landmarks, image_size: Tuple[int, int]) -> np.ndarra
     for lm in landmarks.landmark:
         x = float(lm.x) * width
         y = float(lm.y) * height
+        z = float(lm.z) * width  # MediaPipe は z を正規化 x スケールで返す
         v = getattr(lm, "visibility", 1.0)
-        lm_list.append((x, y, float(v)))
+        lm_list.append((x, y, z, float(v)))
 
     return np.array(lm_list, dtype=float)
 
