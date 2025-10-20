@@ -11,13 +11,12 @@ from __future__ import annotations
 import sys
 
 import cv2
-
 from lib_pose import (
     PoseEstimator,
-    load_reference_pose,
     compute_similarity,
     draw_keypoints_on_frame,
     draw_similarity_on_frame,
+    load_reference_pose,
 )
 
 

@@ -5,8 +5,8 @@ from typing import Optional, Tuple
 
 import cv2
 import numpy as np
-from mediapipe.python.solutions import pose as mp_pose
 from mediapipe.python.solutions import drawing_utils as mp_drawing
+from mediapipe.python.solutions import pose as mp_pose
 
 
 @dataclass

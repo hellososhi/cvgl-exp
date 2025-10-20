@@ -1,8 +1,8 @@
 from .detect import (
     PoseData,
     PoseEstimator,
-    load_reference_pose,
     extract_pose_from_frame,
+    load_reference_pose,
 )
 from .similarity import compute_similarity
 from .util import draw_keypoints_on_frame, draw_similarity_on_frame
