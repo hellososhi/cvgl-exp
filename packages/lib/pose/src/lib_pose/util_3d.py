@@ -72,11 +72,7 @@ def create_pose_3d_batch(
         scale=scale,
     )
 
-    if pose.keypoints.shape[1] >= 4:
-        visibility = pose.keypoints[:, 3]
-    else:
-        visibility = np.ones(len(pose.keypoints), dtype=np.float32)
-
+    visibility = pose.keypoints[:, 3]
     visible_mask = visibility >= visibility_threshold
 
     working_batch = batch or pyglet.graphics.Batch()
@@ -127,4 +123,17 @@ def create_pose_3d_batch(
 __all__ = [
     "PoseVisuals",
     "create_pose_3d_batch",
+    "dispose_pose_visuals",
 ]
+
+
+def dispose_pose_visuals(visuals: PoseVisuals) -> None:
+    """Release the vertex lists owned by ``visuals`` and clear its mapping."""
+
+    for entry in visuals.entries.values():
+        try:
+            entry.delete()
+        except Exception:
+            # Best-effort cleanup; ignore driver-specific errors.
+            pass
+    visuals.entries.clear()
