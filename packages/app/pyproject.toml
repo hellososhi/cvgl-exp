@@ -1,0 +1,13 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = "Application package"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+  "lib-pose"
+]
+
+[tool.uv.sources]
+"lib-pose" = { workspace = true }
