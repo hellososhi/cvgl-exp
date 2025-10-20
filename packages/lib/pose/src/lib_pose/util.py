@@ -4,9 +4,8 @@ from typing import Tuple
 
 import cv2
 import numpy as np
-from mediapipe.python.solutions import pose as mp_pose
 
-from .detect import PoseData
+from .data import POSE_CONNECTIONS, PoseData
 
 
 def draw_keypoints_on_frame(frame: np.ndarray, pose: PoseData) -> None:
@@ -21,7 +20,7 @@ def draw_keypoints_on_frame(frame: np.ndarray, pose: PoseData) -> None:
     if pose is None or pose.keypoints is None:
         return
 
-    for k1, k2 in mp_pose.POSE_CONNECTIONS:
+    for k1, k2 in POSE_CONNECTIONS:
         if k1 < pose.keypoints.shape[0] and k2 < pose.keypoints.shape[0]:
             x1, y1, v1 = pose.keypoints[k1]
             x2, y2, v2 = pose.keypoints[k2]

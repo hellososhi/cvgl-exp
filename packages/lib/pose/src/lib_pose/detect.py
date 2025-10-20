@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import cv2
@@ -8,19 +7,7 @@ import numpy as np
 from mediapipe.python.solutions import drawing_utils as mp_drawing
 from mediapipe.python.solutions import pose as mp_pose
 
-
-@dataclass
-class PoseData:
-    """姿勢データを表すシンプルなコンテナ。
-
-    attributes:
-            keypoints: numpy.ndarray (N, 3) 形式で各キーポイントの (x, y, v)
-                    x,y は画像座標（ピクセル）を想定。v は可視性/存在フラグ。
-            image_size: Tuple[int, int] 元の画像サイズ (width, height)
-    """
-
-    keypoints: np.ndarray
-    image_size: Tuple[int, int]
+from .data import PoseData
 
 
 def _landmarks_to_keypoints(landmarks, image_size: Tuple[int, int]) -> np.ndarray:

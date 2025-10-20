@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from scipy.spatial import procrustes
 
-from .detect import PoseData
+from .data import PoseData
 
 
 def compute_similarity(
