@@ -1,3 +1,5 @@
+"""姿勢検出用の関数群"""
+
 from __future__ import annotations
 
 from typing import Optional, Tuple

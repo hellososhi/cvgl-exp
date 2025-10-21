@@ -1,3 +1,5 @@
+"""姿勢同士の類似度計算"""
+
 from __future__ import annotations
 
 from scipy.spatial import procrustes

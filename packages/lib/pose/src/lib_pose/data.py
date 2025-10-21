@@ -1,3 +1,5 @@
+"""姿勢に関するデータの定義"""
+
 from dataclasses import dataclass
 from typing import Tuple
 

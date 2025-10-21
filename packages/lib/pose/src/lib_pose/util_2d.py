@@ -1,3 +1,5 @@
+"""姿勢に関する 2D の補助関数群"""
+
 from __future__ import annotations
 
 from typing import Tuple

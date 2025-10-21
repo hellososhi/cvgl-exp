@@ -1,4 +1,4 @@
-"""Utilities for rendering 3D poses with pyglet."""
+"""姿勢に関する 3D の補助関数群"""
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, cast
