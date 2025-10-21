@@ -6,64 +6,62 @@ from typing import Optional, Tuple
 
 import cv2
 import numpy as np
-from mediapipe.python.solutions import drawing_utils as mp_drawing
-from mediapipe.python.solutions import pose as mp_pose
+from mediapipe import Image, ImageFormat
+from mediapipe.tasks.python.core.base_options import BaseOptions
+from mediapipe.tasks.python.vision.core.vision_task_running_mode import (
+    VisionTaskRunningMode as RunningMode,
+)
+from mediapipe.tasks.python.vision.pose_landmarker import (
+    PoseLandmarker,
+    PoseLandmarkerOptions,
+    PoseLandmarkerResult,
+)
 
 from .data import PoseData
 
 
-def _landmarks_to_keypoints(landmarks, image_size: Tuple[int, int]) -> np.ndarray:
-    """MediaPipe の landmarks を (N,4) の配列に変換する内部ヘルパー。
+def _landmarks_to_keypoints(
+    landmarks: "PoseLandmarkerResult", image_size: Tuple[int, int]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """MediaPipe の landmarks を (N,3) の配列と visibility に変換する内部ヘルパー。
+    画像座標, ワールド座標, 可視性スコアを返す。
 
     image_size: (width, height)
     """
     width, height = image_size
     lm_list = []
-    for lm in landmarks.landmark:
+    lm_world_list = []
+    v_list = []
+    for lm in landmarks.pose_landmarks[0]:
         x = float(lm.x) * width
         y = float(lm.y) * height
         z = float(lm.z) * width  # MediaPipe は z を正規化 x スケールで返す
-        v = getattr(lm, "visibility", 1.0)
-        lm_list.append((x, y, z, float(v)))
+        v = lm.visibility
+        lm_list.append((x, y, z))
+        v_list.append(float(v))
+    for lm in landmarks.pose_world_landmarks[0]:
+        x = float(lm.x)
+        y = float(lm.y)
+        z = float(lm.z)
+        lm_world_list.append((x, y, z))
 
-    return np.array(lm_list, dtype=float)
+    return (
+        np.array(lm_list, dtype=float),
+        np.array(lm_world_list, dtype=float),
+        np.array(v_list, dtype=float),
+    )
 
 
-def load_reference_pose(image_path: str) -> Tuple[PoseData, np.ndarray]:
-    """参照画像ファイルから MediaPipe を用いて姿勢を推定し、PoseData と注釈画像を返す。
-
-    注: 注釈画像は元画像にランドマークを描画した BGR 画像を返す。
-    """
+def load_reference_pose(image_path: str) -> PoseData:
+    """参照画像ファイルから MediaPipe を用いて姿勢を推定する。"""
     img = cv2.imread(image_path)
     if img is None:
         raise FileNotFoundError(f"参照画像を開けませんでした: {image_path}")
 
-    height, width = img.shape[:2]
-    image_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    annotated = img.copy()
-    with mp_pose.Pose(
-        static_image_mode=True,
-        model_complexity=1,
-        enable_segmentation=False,
-        min_detection_confidence=0.5,
-    ) as pose:
-        results = pose.process(image_rgb)
-
-    landmarks = getattr(results, "pose_landmarks", None)
-    if results and landmarks:
-        keypoints = _landmarks_to_keypoints(landmarks, (width, height))
-        mp_drawing.draw_landmarks(
-            annotated,
-            landmarks,
-            list(mp_pose.POSE_CONNECTIONS),
-            mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
-            mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2),
-        )
-    else:
-        keypoints = np.zeros((0, 3), dtype=float)
-
-    return PoseData(keypoints=keypoints, image_size=(width, height)), annotated
+    # PoseEstimator を使って推定
+    with PoseEstimator() as estimator:
+        pose_data = estimator.process_frame(img)
+    return pose_data
 
 
 def extract_pose_from_frame(frame: np.ndarray) -> Optional[PoseData]:
@@ -78,24 +76,11 @@ def extract_pose_from_frame(frame: np.ndarray) -> Optional[PoseData]:
     if frame is None:
         return None
 
-    height, width = frame.shape[:2]
-    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image_rgb.flags.writeable = False
-
-    with mp_pose.Pose(
-        static_image_mode=False,
-        model_complexity=1,
-        enable_segmentation=False,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-    ) as pose:
-        results = pose.process(image_rgb)
-
-    landmarks = getattr(results, "pose_landmarks", None)
-    if results and landmarks:
-        keypoints = _landmarks_to_keypoints(landmarks, (width, height))
-        return PoseData(keypoints=keypoints, image_size=(width, height))
-
+    with PoseEstimator() as estimator:
+        pose_data = estimator.process_frame(frame)
+    # 検出できなければ keypoints.shape[0] == 0 になる
+    if pose_data.keypoints.shape[0] > 0:
+        return pose_data
     return None
 
 
@@ -108,23 +93,22 @@ class PoseEstimator:
 
     def __init__(
         self,
-        static_image_mode: bool = False,
-        model_complexity: int = 1,
+        model_asset_path: str = "pose_landmarker_full.task",
         enable_segmentation: bool = False,
         min_detection_confidence: float = 0.5,
+        min_presence_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
     ):
-        # 遅延 import は不要だが、明示的に依存をここで参照する
-        from mediapipe.python.solutions import pose as mp_pose
-
-        self._mp_pose = mp_pose
-        self._pose = mp_pose.Pose(
-            static_image_mode=static_image_mode,
-            model_complexity=model_complexity,
-            enable_segmentation=enable_segmentation,
-            min_detection_confidence=min_detection_confidence,
+        base_options = BaseOptions(model_asset_path=model_asset_path)
+        options = PoseLandmarkerOptions(
+            base_options=base_options,
+            running_mode=RunningMode.IMAGE,
+            min_pose_detection_confidence=min_detection_confidence,
+            min_pose_presence_confidence=min_presence_confidence,
             min_tracking_confidence=min_tracking_confidence,
+            output_segmentation_masks=enable_segmentation,
         )
+        self._detector = PoseLandmarker.create_from_options(options)
 
     def process_frame(self, frame: np.ndarray) -> PoseData:
         """BGR フレームを入力に取り、PoseData を返す（検出無ければ空配列を返す）。"""
@@ -134,21 +118,23 @@ class PoseEstimator:
         height, width = frame.shape[:2]
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_rgb.flags.writeable = False
-        results = self._pose.process(image_rgb)
+        mp_image = Image(image_format=ImageFormat.SRGB, data=image_rgb)
+        results = self._detector.detect(mp_image)
         image_rgb.flags.writeable = True
+        keypoints, keypoints_world, visibility = _landmarks_to_keypoints(
+            results, (width, height)
+        )
 
-        landmarks = getattr(results, "pose_landmarks", None)
-        if results and landmarks:
-            keypoints = _landmarks_to_keypoints(landmarks, (width, height))
-        else:
-            keypoints = np.zeros((0, 3), dtype=float)
-
-        return PoseData(keypoints=keypoints, image_size=(width, height))
+        return PoseData(
+            keypoints=keypoints,
+            keypoints_world=keypoints_world,
+            visibility=visibility,
+            image_size=(width, height),
+        )
 
     def close(self) -> None:
         try:
-            # MediaPipe の Pose は close() を提供
-            self._pose.close()
+            self._detector.close()
         except Exception:
             pass
 

@@ -49,8 +49,6 @@ class Pose3DDemo:
             self._cv_window_created = False
 
         self._estimator = PoseEstimator(
-            static_image_mode=False,
-            model_complexity=1,
             enable_segmentation=False,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
@@ -139,8 +137,16 @@ class Pose3DDemo:
         keypoints = np.array(pose.keypoints, copy=True)
         if keypoints.shape[1] >= 2:
             keypoints[:, 1] = pose.image_size[1] - keypoints[:, 1]
+        keypoints_world = np.array(pose.keypoints_world, copy=True)
+        if keypoints_world.shape[1] >= 2:
+            keypoints_world[:, 1] = -keypoints_world[:, 1]
 
-        return PoseData(keypoints=keypoints, image_size=pose.image_size)
+        return PoseData(
+            keypoints=keypoints,
+            keypoints_world=keypoints_world,
+            visibility=pose.visibility,
+            image_size=pose.image_size,
+        )
 
     def _render_pose_on_frame(self, frame: np.ndarray, pose: PoseData) -> None:
         display_frame = frame.copy()

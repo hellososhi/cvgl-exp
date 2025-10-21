@@ -24,11 +24,14 @@ def draw_keypoints_on_frame(frame: np.ndarray, pose: PoseData) -> None:
 
     for k1, k2 in POSE_CONNECTIONS:
         if k1 < pose.keypoints.shape[0] and k2 < pose.keypoints.shape[0]:
-            x1, y1, _z1, v1 = pose.keypoints[k1]
-            x2, y2, _z2, v2 = pose.keypoints[k2]
+            x1, y1, _z1 = pose.keypoints[k1]
+            x2, y2, _z2 = pose.keypoints[k2]
+            v1 = pose.visibility[k1]
+            v2 = pose.visibility[k2]
             if v1 > 0 and v2 > 0:
                 cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
-    for i, (x, y, _z, v) in enumerate(pose.keypoints):
+    for i, (x, y, _z) in enumerate(pose.keypoints):
+        v = pose.visibility[i]
         if v == 0 or v <= 0.0:
             color = (150, 150, 150)
         else:

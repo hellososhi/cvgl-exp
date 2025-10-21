@@ -67,7 +67,7 @@ def create_pose_3d_matplotlib(
     coords = _prepare_coordinates(
         pose, normalize=normalize, translate=translate, scale=scale
     )
-    visibility = pose.keypoints[:, 3]
+    visibility = pose.visibility
     visible_mask = visibility >= visibility_threshold
 
     # Map MediaPipe coords -> plotting coords: (X=x, Y=z, Z=y)
@@ -148,8 +148,6 @@ class Pose3DMatplotlibDemo:
             self._cv_window_created = False
 
         self._estimator = PoseEstimator(
-            static_image_mode=False,
-            model_complexity=1,
             enable_segmentation=False,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
@@ -183,12 +181,20 @@ class Pose3DMatplotlibDemo:
         if pose.keypoints.size == 0:
             return pose
 
-        keypoints = np.array(pose.keypoints, copy=True)
         # invert y to match display coordinate (origin at bottom-left for matplotlib 3D)
+        keypoints = np.array(pose.keypoints, copy=True)
         if keypoints.shape[1] >= 2:
             keypoints[:, 1] = pose.image_size[1] - keypoints[:, 1]
+        keypoints_world = np.array(pose.keypoints_world, copy=True)
+        if keypoints_world.shape[1] >= 2:
+            keypoints_world[:, 1] = -keypoints_world[:, 1]
 
-        return PoseData(keypoints=keypoints, image_size=pose.image_size)
+        return PoseData(
+            keypoints=keypoints,
+            keypoints_world=keypoints_world,
+            visibility=pose.visibility,
+            image_size=pose.image_size,
+        )
 
     def _update(self, frame_index: int) -> list[Artist]:
         if not self._capture.isOpened():
@@ -210,7 +216,7 @@ class Pose3DMatplotlibDemo:
 
         render_pose = self._prepare_pose_for_render(pose)
         if self._debug and render_pose.keypoints.size:
-            print(f"Max visibility: {np.max(render_pose.keypoints[:, 3])}")
+            print(f"Max visibility: {np.max(render_pose.visibility)}")
 
         # Clear prior visuals
         if self.pose_visuals:

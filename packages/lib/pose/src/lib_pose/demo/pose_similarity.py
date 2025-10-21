@@ -16,7 +16,6 @@ from lib_pose import (
     compute_similarity,
     draw_keypoints_on_frame,
     draw_similarity_on_frame,
-    load_reference_pose,
 )
 
 
@@ -31,7 +30,12 @@ def run(
     `lib.pose` の関数を利用する。
     """
     try:
-        ref_pose, ref_annotated = load_reference_pose(reference_image_path)
+        ref = cv2.imread(reference_image_path)
+        if ref is None:
+            raise FileNotFoundError(
+                f"参照画像を開けませんでした: {reference_image_path}"
+            )
+        ref_pose = PoseEstimator().process_frame(ref)
     except Exception as e:
         print(f"参照画像の読み込みに失敗しました: {e}", file=sys.stderr)
         return 2
@@ -42,8 +46,6 @@ def run(
         return 3
 
     with PoseEstimator(
-        static_image_mode=False,
-        model_complexity=1,
         enable_segmentation=False,
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
@@ -59,14 +61,14 @@ def run(
 
                 draw_keypoints_on_frame(frame, query_pose)
                 # 参照画像注釈は既に注釈済み画像を表示
-                draw_keypoints_on_frame(ref_annotated, ref_pose)
+                draw_keypoints_on_frame(ref, ref_pose)
 
                 sim = compute_similarity(ref_pose, query_pose, method=method)
                 print(f"Similarity: {sim:.3f}")
                 flipped = cv2.flip(frame, 1)
                 draw_similarity_on_frame(flipped, sim)
                 cv2.imshow("MediaPipe Pose Similarity (mirrored)", flipped)
-                ref_flipped = cv2.flip(ref_annotated, 1)
+                ref_flipped = cv2.flip(ref, 1)
                 cv2.imshow("Reference Pose", ref_flipped)
 
                 if cv2.waitKey(5) & 0xFF == ord("q"):

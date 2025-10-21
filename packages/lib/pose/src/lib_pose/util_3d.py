@@ -72,7 +72,7 @@ def create_pose_3d_batch(
         scale=scale,
     )
 
-    visibility = pose.keypoints[:, 3]
+    visibility = pose.visibility
     visible_mask = visibility >= visibility_threshold
 
     working_batch = batch or pyglet.graphics.Batch()
