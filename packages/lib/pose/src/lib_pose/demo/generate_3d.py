@@ -172,7 +172,6 @@ class RandomPoseViewer:
                 )
                 text.set_animated(False)
                 self._label_artists.append(text)
-                print(f"Added label: {label} at {plot_coords[idx]}")
         self.fig.canvas.draw_idle()
 
     def _on_key_press(self, event) -> None:
