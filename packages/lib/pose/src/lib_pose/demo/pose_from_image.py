@@ -23,7 +23,7 @@ def run(
         print(ref_pose)
         # ref_pose.keypoints 外部ファイルに書き出す
         with open("ref_pose_keypoints.txt", "w") as f:
-            for keypoint in ref_pose.keypoints:
+            for keypoint in ref_pose.keypoints_world:
                 f.write(f"{keypoint[0]} {keypoint[1]} {keypoint[2]}\n")
     except Exception as e:
         print(f"参照画像の読み込みに失敗しました: {e}", file=sys.stderr)

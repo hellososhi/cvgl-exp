@@ -32,6 +32,7 @@ def _landmarks_to_keypoints(
     lm_list = []
     lm_world_list = []
     v_list = []
+
     for lm in landmarks.pose_landmarks[0]:
         x = float(lm.x) * width
         y = float(lm.y) * height
@@ -39,11 +40,46 @@ def _landmarks_to_keypoints(
         v = lm.visibility
         lm_list.append((x, y, z))
         v_list.append(float(v))
+    # 7 と 8 の中点を neck_top (33) として追加
+    # 11 と 12 の中点を neck_bottom (34) として追加
+    if len(landmarks.pose_landmarks[0]) >= 13:
+        lm7 = landmarks.pose_landmarks[0][7]
+        lm8 = landmarks.pose_landmarks[0][8]
+        x_top = (float(lm7.x) + float(lm8.x)) / 2 * width
+        y_top = (float(lm7.y) + float(lm8.y)) / 2 * height
+        z_top = (float(lm7.z) + float(lm8.z)) / 2 * width
+        v_top = (float(lm7.visibility) + float(lm8.visibility)) / 2
+        lm_list.append((x_top, y_top, z_top))
+        v_list.append(float(v_top))
+        lm11 = landmarks.pose_landmarks[0][11]
+        lm12 = landmarks.pose_landmarks[0][12]
+        x_bottom = (float(lm11.x) + float(lm12.x)) / 2 * width
+        y_bottom = (float(lm11.y) + float(lm12.y)) / 2 * height
+        z_bottom = (float(lm11.z) + float(lm12.z)) / 2 * width
+        v_bottom = (float(lm11.visibility) + float(lm12.visibility)) / 2
+        lm_list.append((x_bottom, y_bottom, z_bottom))
+        v_list.append(float(v_bottom))
+
     for lm in landmarks.pose_world_landmarks[0]:
         x = float(lm.x)
         y = float(lm.y)
         z = float(lm.z)
         lm_world_list.append((x, y, z))
+    # 7 と 8 の中点を neck_top (33) として追加
+    # 11 と 12 の中点を neck_bottom (34) として追加
+    if len(landmarks.pose_world_landmarks[0]) >= 13:
+        lm7 = landmarks.pose_world_landmarks[0][7]
+        lm8 = landmarks.pose_world_landmarks[0][8]
+        x_top = (float(lm7.x) + float(lm8.x)) / 2
+        y_top = (float(lm7.y) + float(lm8.y)) / 2
+        z_top = (float(lm7.z) + float(lm8.z)) / 2
+        lm_world_list.append((x_top, y_top, z_top))
+        lm11 = landmarks.pose_world_landmarks[0][11]
+        lm12 = landmarks.pose_world_landmarks[0][12]
+        x_bottom = (float(lm11.x) + float(lm12.x)) / 2
+        y_bottom = (float(lm11.y) + float(lm12.y)) / 2
+        z_bottom = (float(lm11.z) + float(lm12.z)) / 2
+        lm_world_list.append((x_bottom, y_bottom, z_bottom))
 
     return (
         np.array(lm_list, dtype=float),
