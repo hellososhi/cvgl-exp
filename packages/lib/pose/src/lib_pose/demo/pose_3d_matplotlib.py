@@ -32,7 +32,7 @@ def _prepare_coordinates(
     translate: Tuple[float, float, float],
     scale: float,
 ) -> np.ndarray:
-    coords = np.asarray(pose.keypoints[:, :3], dtype=np.float32)
+    coords = np.asarray(pose.keypoints_world[:, :3], dtype=np.float32)
 
     if normalize:
         width, height = pose.image_size
@@ -84,6 +84,8 @@ def create_pose_3d_matplotlib(
     pts_x = xs[visible_mask]
     pts_y = ys[visible_mask]
     pts_z = zs[visible_mask]
+    for pt in zip(pts_x, pts_y, pts_z):
+        print(f"Point: x={pt[0]:.3f}, y={pt[1]:.3f}, z={pt[2]:.3f}")
     if pts_x.size:
         points = ax.scatter(pts_x, pts_y, pts_z, c="r", s=30)
     else:
@@ -231,7 +233,7 @@ class Pose3DMatplotlibDemo:
             render_pose,
             ax=self.ax,
             visibility_threshold=self.visibility_threshold,
-            normalize=True,
+            normalize=False,
             translate=(0.0, -0.2, 0.0),
             scale=2.0,
         )
