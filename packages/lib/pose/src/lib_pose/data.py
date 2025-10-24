@@ -1,7 +1,7 @@
 """姿勢に関するデータの定義"""
 
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -156,4 +156,37 @@ POSE_SAMPLE_BONE_LENGTHS = {
     (27, 31): 0.4719,
     (28, 32): 0.4640,
     (33, 34): 0.5851,  # added
+}
+
+# 各関節の角度制限（ラジアン）
+# Ball joints: dict with yaw/pitch/roll ranges, hinge joints: tuple (min, max)
+JOINT_ANGLE_LIMITS: Dict[str, Dict[str, Tuple[float, float]] | Tuple[float, float]] = {
+    "left_shoulder": {
+        "yaw": (-np.deg2rad(90.0), np.deg2rad(90.0)),
+        "pitch": (-np.deg2rad(110.0), np.deg2rad(45.0)),
+        "roll": (-np.deg2rad(60.0), np.deg2rad(60.0)),
+    },
+    "right_shoulder": {
+        "yaw": (-np.deg2rad(90.0), np.deg2rad(90.0)),
+        "pitch": (-np.deg2rad(110.0), np.deg2rad(45.0)),
+        "roll": (-np.deg2rad(60.0), np.deg2rad(60.0)),
+    },
+    "left_hip": {
+        "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
+        "pitch": (-np.deg2rad(120.0), np.deg2rad(60.0)),
+        "roll": (-np.deg2rad(40.0), np.deg2rad(40.0)),
+    },
+    "right_hip": {
+        "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
+        "pitch": (-np.deg2rad(120.0), np.deg2rad(60.0)),
+        "roll": (-np.deg2rad(40.0), np.deg2rad(40.0)),
+    },
+    "left_elbow": (-np.deg2rad(5.0), np.deg2rad(150.0)),
+    "right_elbow": (-np.deg2rad(5.0), np.deg2rad(150.0)),
+    "left_knee": (-np.deg2rad(5.0), np.deg2rad(150.0)),
+    "right_knee": (-np.deg2rad(5.0), np.deg2rad(150.0)),
+    "left_wrist": (-np.deg2rad(45.0), np.deg2rad(45.0)),
+    "right_wrist": (-np.deg2rad(45.0), np.deg2rad(45.0)),
+    "left_ankle": (-np.deg2rad(55.0), np.deg2rad(35.0)),
+    "right_ankle": (-np.deg2rad(55.0), np.deg2rad(35.0)),
 }

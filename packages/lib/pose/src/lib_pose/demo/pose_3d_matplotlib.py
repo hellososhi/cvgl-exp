@@ -8,13 +8,15 @@ from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
-from lib_pose.data import POSE_CONNECTIONS, PoseData
+from lib_pose.data import POSE_CONNECTIONS, POSE_LANDMARKS, PoseData
 from lib_pose.detect import PoseEstimator
 from lib_pose.util_2d import draw_keypoints_on_frame
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.artist import Artist
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (required for 3D projection)
+
+INDEX_TO_LABEL = {index: name for name, index in POSE_LANDMARKS.items()}
 
 
 @dataclass
@@ -23,6 +25,7 @@ class PoseVisualsMatplotlib:
 
     points: Optional[Artist]
     segments: Optional[List[Artist]]
+    labels: Optional[List[Artist]]
 
 
 def _prepare_coordinates(
@@ -62,13 +65,15 @@ def create_pose_3d_matplotlib(
     Returns a PoseVisualsMatplotlib containing scatter and line collections (as lists).
     """
     if pose.keypoints.size == 0:
-        return PoseVisualsMatplotlib(points=None, segments=None)
+        return PoseVisualsMatplotlib(points=None, segments=None, labels=None)
 
     coords = _prepare_coordinates(
         pose, normalize=normalize, translate=translate, scale=scale
     )
     visibility = pose.visibility
-    visible_mask = visibility >= visibility_threshold
+    visible_mask = [
+        v >= visibility_threshold and i > 10 for i, v in enumerate(visibility)
+    ]
 
     # Map MediaPipe coords -> plotting coords: (X=x, Y=z, Z=y)
     plot_coords = np.empty_like(coords)
@@ -84,8 +89,6 @@ def create_pose_3d_matplotlib(
     pts_x = xs[visible_mask]
     pts_y = ys[visible_mask]
     pts_z = zs[visible_mask]
-    for pt in zip(pts_x, pts_y, pts_z):
-        print(f"Point: x={pt[0]:.3f}, y={pt[1]:.3f}, z={pt[2]:.3f}")
     if pts_x.size:
         points = ax.scatter(pts_x, pts_y, pts_z, c="r", s=30)
     else:
@@ -94,6 +97,9 @@ def create_pose_3d_matplotlib(
     # Segments
     segment_lines: List[Artist] = []
     for start, end in POSE_CONNECTIONS:
+        if start <= 10 or end <= 10:
+            # skip face connections
+            continue
         if start >= len(coords) or end >= len(coords):
             continue
         if not (visible_mask[start] and visible_mask[end]):
@@ -104,7 +110,33 @@ def create_pose_3d_matplotlib(
         line = ax.plot(xseg, yseg, zseg, c="b", linewidth=2)[0]
         segment_lines.append(line)
 
-    return PoseVisualsMatplotlib(points=points, segments=segment_lines)
+    # Labels
+    labels: List[Artist] = []
+    for idx, is_visible in enumerate(visible_mask):
+        if not is_visible:
+            continue
+        if idx >= plot_coords.shape[0]:
+            continue
+        label = INDEX_TO_LABEL.get(idx, str(idx))
+        text = ax.text(
+            float(plot_coords[idx, 0]),
+            float(plot_coords[idx, 1]),
+            float(plot_coords[idx, 2]),
+            label,
+            fontsize=8,
+            color="black",
+            ha="center",
+            va="center",
+            bbox={
+                "boxstyle": "round,pad=0.2",
+                "fc": "none",
+                "ec": "none",
+                "alpha": 0.7,
+            },
+        )
+        labels.append(text)
+
+    return PoseVisualsMatplotlib(points=points, segments=segment_lines, labels=labels)
 
 
 def dispose_pose_visuals_matplotlib(visuals: PoseVisualsMatplotlib) -> None:
@@ -119,6 +151,12 @@ def dispose_pose_visuals_matplotlib(visuals: PoseVisualsMatplotlib) -> None:
         for line in list(visuals.segments):
             try:
                 line.remove()
+            except Exception:
+                pass
+    if visuals.labels is not None:
+        for text in list(visuals.labels):
+            try:
+                text.remove()
             except Exception:
                 pass
 

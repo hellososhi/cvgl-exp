@@ -6,17 +6,15 @@ import argparse
 from typing import Optional
 
 import numpy as np
-from lib_pose.data import POSE_LANDMARKS, PoseData
+from lib_pose.data import PoseData
 from lib_pose.demo.pose_3d_matplotlib import (
     PoseVisualsMatplotlib,
     create_pose_3d_matplotlib,
     dispose_pose_visuals_matplotlib,
 )
-from lib_pose.generate import generate_random_pose
+from lib_pose.generate_kinematics import generate_random_pose
 from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
-
-INDEX_TO_LABEL = {index: name for name, index in POSE_LANDMARKS.items()}
 
 NORMALIZE = False
 TRANSLATE = (0.0, 0.0, 0.0)
@@ -44,38 +42,6 @@ def _prepare_pose_for_display(pose: PoseData) -> PoseData:
     )
 
 
-def _compute_plot_coordinates(
-    pose: PoseData,
-    *,
-    visibility_threshold: float,
-    normalize: bool,
-    translate: tuple[float, float, float],
-    scale: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    coords = np.asarray(pose.keypoints_world[:, :3], dtype=np.float32)
-
-    if normalize:
-        width, height = pose.image_size
-        span = max(float(width), float(height)) or 1.0
-        coords[:, 0] = (coords[:, 0] - width * 0.5) / span
-        coords[:, 1] = (coords[:, 1] - height * 0.5) / span
-        coords[:, 2] = coords[:, 2] / span
-
-    coords *= scale
-    coords[:, 0] += translate[0]
-    coords[:, 1] += translate[1]
-    coords[:, 2] += translate[2]
-
-    plot_coords = np.empty_like(coords)
-    plot_coords[:, 0] = coords[:, 0]
-    plot_coords[:, 1] = coords[:, 2]
-    plot_coords[:, 2] = coords[:, 1]
-
-    visibility = pose.visibility
-    visible_mask = visibility >= visibility_threshold
-    return plot_coords, visible_mask
-
-
 class RandomPoseViewer:
     def __init__(
         self,
@@ -101,7 +67,6 @@ class RandomPoseViewer:
         self.fig.suptitle("Random pose viewer — press 'n' for next, 'q' to quit")
 
         self.pose_visuals: Optional[PoseVisualsMatplotlib] = None
-        self._label_artists: list[Artist] = []
         self.fig.canvas.mpl_connect("key_press_event", self._on_key_press)
         self.fig.canvas.mpl_connect("close_event", self._on_close)
 
@@ -110,7 +75,6 @@ class RandomPoseViewer:
     def _render_next_pose(self) -> None:
         try:
             pose = generate_random_pose(
-                image_size=self._image_size,
                 rng=self._rng,
             )
         except RuntimeError as exc:
@@ -121,7 +85,6 @@ class RandomPoseViewer:
         if self.pose_visuals is not None:
             dispose_pose_visuals_matplotlib(self.pose_visuals)
             self.pose_visuals = None
-        self._clear_labels()
 
         self.pose_visuals = create_pose_3d_matplotlib(
             display_pose,
@@ -137,41 +100,11 @@ class RandomPoseViewer:
             artists.append(self.pose_visuals.points)
         if self.pose_visuals.segments is not None:
             artists.extend(self.pose_visuals.segments)
+        if self.pose_visuals.labels is not None:
+            artists.extend(self.pose_visuals.labels)
         for artist in artists:
             artist.set_animated(False)
 
-        if display_pose.keypoints.size:
-            plot_coords, visible_mask = _compute_plot_coordinates(
-                display_pose,
-                visibility_threshold=self._visibility_threshold,
-                normalize=NORMALIZE,
-                translate=TRANSLATE,
-                scale=SCALE,
-            )
-            for idx, is_visible in enumerate(visible_mask):
-                if not is_visible:
-                    continue
-                if idx >= plot_coords.shape[0]:
-                    continue
-                label = INDEX_TO_LABEL.get(idx, str(idx))
-                text = self.ax.text(
-                    float(plot_coords[idx, 0]),
-                    float(plot_coords[idx, 1]),
-                    float(plot_coords[idx, 2]),
-                    label,
-                    fontsize=8,
-                    color="black",
-                    ha="center",
-                    va="center",
-                    bbox={
-                        "boxstyle": "round,pad=0.2",
-                        "fc": "none",
-                        "ec": "none",
-                        "alpha": 0.7,
-                    },
-                )
-                text.set_animated(False)
-                self._label_artists.append(text)
         self.fig.canvas.draw_idle()
 
     def _on_key_press(self, event) -> None:
@@ -187,7 +120,6 @@ class RandomPoseViewer:
         self.close()
 
     def close(self) -> None:
-        self._clear_labels()
         if self.pose_visuals is not None:
             dispose_pose_visuals_matplotlib(self.pose_visuals)
             self.pose_visuals = None
@@ -197,16 +129,6 @@ class RandomPoseViewer:
             plt.show()
         finally:
             self.close()
-
-    def _clear_labels(self) -> None:
-        if not self._label_artists:
-            return
-        for artist in list(self._label_artists):
-            try:
-                artist.remove()
-            except Exception:
-                pass
-        self._label_artists.clear()
 
 
 def build_argument_parser() -> argparse.ArgumentParser:

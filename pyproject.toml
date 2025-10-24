@@ -2,7 +2,7 @@
 members = ["packages/app", "packages/lib/*"]
 
 [dependency-groups]
-dev = [
-    "pre-commit>=3.7.0",
-    "ruff>=0.14.1",
-]
+dev = ["pre-commit>=3.7.0", "ruff>=0.14.1"]
+
+[tool.ruff]
+exclude = ["misc/**"]
