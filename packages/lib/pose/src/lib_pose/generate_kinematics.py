@@ -14,10 +14,6 @@ import numpy as np
 
 from .data import JOINT_ANGLE_LIMITS, POSE_LANDMARKS, POSE_SAMPLE_BONE_LENGTHS, PoseData
 
-# These constants are consumed by downstream helpers; keep references to appease linters
-_CONSTRAINT_CONSTANTS = (JOINT_ANGLE_LIMITS, POSE_SAMPLE_BONE_LENGTHS)
-
-
 JointName = str
 
 
@@ -263,7 +259,7 @@ def _place_torso_scaffold(
     )
 
     neck_length: float = POSE_SAMPLE_BONE_LENGTHS[(33, 34)]
-    neck_top_pos = np.array([0.0, neck_length, 0.0], dtype=np.float64)
+    neck_top_pos = np.array([0.0, -neck_length, 0.0], dtype=np.float64)
     joints["neck_top"][:] = neck_top_pos
     frames["neck_top"] = JointFrame(
         position=neck_top_pos,
