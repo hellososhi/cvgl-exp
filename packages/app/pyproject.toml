@@ -5,9 +5,8 @@ description = "Application package"
 readme = "README.md"
 requires-python = ">=3.12"
 
-dependencies = [
-  "lib-pose"
-]
+dependencies = ["lib-pose", "lib-game"]
 
 [tool.uv.sources]
 "lib-pose" = { workspace = true }
+"lib-game" = { workspace = true }
