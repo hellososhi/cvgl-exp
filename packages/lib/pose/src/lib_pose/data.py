@@ -162,14 +162,14 @@ POSE_SAMPLE_BONE_LENGTHS = {
 # Ball joints: dict with yaw/pitch/roll ranges, hinge joints: tuple (min, max)
 JOINT_ANGLE_LIMITS: Dict[str, Dict[str, Tuple[float, float]] | Tuple[float, float]] = {
     "left_shoulder": {
-        "yaw": (-np.deg2rad(0.0), np.deg2rad(0.0)),
+        "yaw": (np.deg2rad(30.0), np.deg2rad(180.0)),
         "pitch": (-np.deg2rad(45.0), np.deg2rad(210.0)),
         "roll": (-np.deg2rad(60.0), np.deg2rad(60.0)),
     },
     "right_shoulder": {
-        "yaw": (-np.deg2rad(0.0), np.deg2rad(0.0)),
+        "yaw": (np.deg2rad(30.0), np.deg2rad(180.0)),
         "pitch": (-np.deg2rad(210.0), np.deg2rad(45.0)),
-        "roll": (-np.deg2rad(180.0), -np.deg2rad(180.0)),
+        "roll": (-np.deg2rad(240.0), -np.deg2rad(120.0)),
     },
     "left_hip": {
         "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
