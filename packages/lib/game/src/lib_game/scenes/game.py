@@ -3,7 +3,6 @@ import numpy as np
 import pygame
 from lib_pose import compute_similarity
 from lib_pose.detect import PoseEstimator
-from lib_pose.util_2d import draw_keypoints_on_frame, draw_similarity_on_frame
 
 from ..sequence import SceneInterface
 
@@ -16,6 +15,12 @@ class GameScene(SceneInterface):
         self.last_frame = None
         self.last_similarity = 0.0
         self._last_pose_data = None
+        self._time_since_enter = 0.0
+        self._transition_triggered = False
+        self._auto_transition_delay = 5.0
+        self._remaining_time = self._auto_transition_delay
+        self._font = None
+        self._timer_started = False
 
     def enter(self):
         """Open camera and prepare pose estimator and reference pose.
@@ -42,6 +47,13 @@ class GameScene(SceneInterface):
         self.last_frame = None
         self.last_similarity = 0.0
         self._last_pose_data = None
+        self._time_since_enter = 0.0
+        self._transition_triggered = False
+        self._remaining_time = self._auto_transition_delay
+        if not pygame.font.get_init():
+            pygame.font.init()
+        self._font = pygame.font.SysFont(None, 48)
+        self._timer_started = False
 
     def exit(self):
         print("GameScene: exit")
@@ -52,6 +64,11 @@ class GameScene(SceneInterface):
         self._estimator = None
         self.cap = None
         self._last_pose_data = None
+        self._time_since_enter = 0.0
+        self._transition_triggered = False
+        self._remaining_time = self._auto_transition_delay
+        self._font = None
+        self._timer_started = False
 
     def update(self, dt: float) -> None:
         """Capture a frame, run pose estimation and compute similarity.
@@ -64,10 +81,19 @@ class GameScene(SceneInterface):
             print("GameScene: update called before enter")
             return
 
+        if not self._timer_started:
+            self._timer_started = True
+            self._time_since_enter = 0.0
+        else:
+            self._time_since_enter += dt
+
         ret, frame = self.cap.read()
         if not ret:
             print("GameScene: failed to read frame from camera")
             return
+
+        # mirror frame horizontally for display and estimation consistency
+        frame = np.ascontiguousarray(frame[:, ::-1, :])
 
         # use the estimator to get PoseData
         pose = self._estimator.process_frame(frame)
@@ -81,13 +107,22 @@ class GameScene(SceneInterface):
         if self.reference_pose:
             sim, _, _ = compute_similarity(self.reference_pose, pose)
 
-        # draw overlays directly onto a copy of the frame (BGR)
-        vis_frame = frame.copy()
-        draw_keypoints_on_frame(vis_frame, pose)
-        draw_similarity_on_frame(vis_frame, sim)
-
-        self.last_frame = vis_frame
+        self.last_frame = frame
         self.last_similarity = sim
+        self._remaining_time = max(
+            self._auto_transition_delay - self._time_since_enter, 0.0
+        )
+
+        if (
+            not self._transition_triggered
+            and self._time_since_enter >= self._auto_transition_delay
+        ):
+            self._transition_triggered = True
+            if self.manager is not None:
+                state = self.manager.global_state
+                if self._last_pose_data is not None:
+                    state.query_pose = self._last_pose_data
+                self.manager.start("result")
 
     def render(self, surface):
         """Convert the last processed frame to a pygame surface and blit it.
@@ -115,24 +150,23 @@ class GameScene(SceneInterface):
                 frame_rgb.tobytes(), (surf_w, surf_h), "RGB"
             )
             surface.blit(pg_surf, (0, 0))
+
+            if self._font is not None:
+                countdown_text = self._font.render(
+                    f"{self._remaining_time:.1f}s", True, (0, 255, 0)
+                )
+                surface.blit(countdown_text, (20, 60))
         except Exception as e:
             print("GameScene: render failed:", e)
 
     def handle_event(self, event) -> None:
-        """Handle pygame events: ESC quits to result scene, SPACE returns to start."""
+        """Handle pygame events: SPACE returns to the start scene."""
 
         if event is None:
             return
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                # go to result scene
-                if self.manager is not None:
-                    state = self.manager.global_state
-                    if self._last_pose_data is not None:
-                        state.query_pose = self._last_pose_data
-                    self.manager.start("result")
-            elif event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE:
                 if self.manager is not None:
                     state = self.manager.global_state
                     state.query_pose = None
