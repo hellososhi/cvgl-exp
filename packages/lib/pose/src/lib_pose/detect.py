@@ -34,6 +34,9 @@ def _landmarks_to_keypoints(
     lm_world_list = []
     v_list = []
 
+    if len(landmarks.pose_landmarks) == 0:
+        raise ValueError("No pose landmarks found in the result.")
+
     for lm in landmarks.pose_landmarks[0]:
         x = float(lm.x) * width
         y = float(lm.y) * height
@@ -159,9 +162,17 @@ class PoseEstimator:
         mp_image = Image(image_format=ImageFormat.SRGB, data=image_rgb)
         results = self._detector.detect(mp_image)
         image_rgb.flags.writeable = True
-        keypoints, keypoints_world, visibility = _landmarks_to_keypoints(
-            results, (width, height)
-        )
+        try:
+            keypoints, keypoints_world, visibility = _landmarks_to_keypoints(
+                results, (width, height)
+            )
+        except ValueError:
+            return PoseData(
+                keypoints=np.zeros((0, 3)),
+                keypoints_world=np.zeros((0, 3)),
+                visibility=np.zeros((0,)),
+                image_size=(width, height),
+            )
 
         return PoseData(
             keypoints=keypoints,

@@ -173,12 +173,12 @@ JOINT_ANGLE_LIMITS: Dict[str, Dict[str, Tuple[float, float]] | Tuple[float, floa
     },
     "left_hip": {
         "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
-        "pitch": (-np.deg2rad(120.0), np.deg2rad(60.0)),
+        "pitch": (-np.deg2rad(300.0), np.deg2rad(-120.0)),
         "roll": (-np.deg2rad(40.0), np.deg2rad(40.0)),
     },
     "right_hip": {
         "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
-        "pitch": (-np.deg2rad(120.0), np.deg2rad(60.0)),
+        "pitch": (-np.deg2rad(300.0), np.deg2rad(-120.0)),
         "roll": (-np.deg2rad(40.0), np.deg2rad(40.0)),
     },
     "left_elbow": (-np.deg2rad(5.0), np.deg2rad(150.0)),

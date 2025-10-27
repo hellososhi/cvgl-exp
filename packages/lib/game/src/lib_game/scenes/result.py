@@ -190,8 +190,6 @@ class ResultScene(SceneInterface):
         if axes is None:
             return
 
-        print(pose_query)
-
         if self._visuals.reference is not None:
             dispose_pose_visuals_matplotlib(self._visuals.reference)
             self._visuals.reference = None
