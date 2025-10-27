@@ -79,7 +79,7 @@ class GameScene(SceneInterface):
         # compute similarity
         sim = 0.0
         if self.reference_pose:
-            sim, _ = compute_similarity(self.reference_pose, pose)
+            sim, _, _ = compute_similarity(self.reference_pose, pose)
 
         # draw overlays directly onto a copy of the frame (BGR)
         vis_frame = frame.copy()
@@ -88,9 +88,6 @@ class GameScene(SceneInterface):
 
         self.last_frame = vis_frame
         self.last_similarity = sim
-        if self.manager is not None:
-            state = self.manager.global_state
-            state.similarity = sim
 
     def render(self, surface):
         """Convert the last processed frame to a pygame surface and blit it.
@@ -139,6 +136,4 @@ class GameScene(SceneInterface):
                 if self.manager is not None:
                     state = self.manager.global_state
                     state.query_pose = None
-                    state.similarity = 0.0
-                    state.transformed_pose = None
                     self.manager.start("start")

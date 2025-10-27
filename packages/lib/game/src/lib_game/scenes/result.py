@@ -42,51 +42,10 @@ def _prepare_pose_for_display(pose: PoseData) -> PoseData:
     )
 
 
-def _align_pose_world(pose_ref: PoseData, pose_query: PoseData) -> Optional[np.ndarray]:
-    """Align query pose to reference in world coordinates using Kabsch."""
-
-    ref_world = np.asarray(pose_ref.keypoints_world, dtype=float)
-    query_world = np.asarray(pose_query.keypoints_world, dtype=float)
-
-    if ref_world.size == 0 or query_world.size == 0:
-        return None
-
-    k = min(ref_world.shape[0], query_world.shape[0])
-    ref_world = ref_world[:k, :3]
-    query_world = query_world[:k, :3]
-
-    ref_centroid = ref_world.mean(axis=0)
-    query_centroid = query_world.mean(axis=0)
-    ref_centered = ref_world - ref_centroid
-    query_centered = query_world - query_centroid
-
-    ref_norm = np.linalg.norm(ref_centered)
-    query_norm = np.linalg.norm(query_centered)
-    if ref_norm < 1e-8 or query_norm < 1e-8:
-        return None
-
-    ref_scaled = ref_centered / ref_norm
-    query_scaled = query_centered / query_norm
-    covariance = query_scaled.T @ ref_scaled
-    try:
-        U, _, Vt = np.linalg.svd(covariance)
-    except np.linalg.LinAlgError:
-        return None
-
-    rotation = U @ Vt
-    if np.linalg.det(rotation) < 0:
-        Vt[-1, :] *= -1
-        rotation = U @ Vt
-
-    scale = ref_norm / query_norm
-    transformed = (query_centered @ rotation) * scale + ref_centroid
-    return transformed
-
-
 @dataclass
 class _ResultVisuals:
     reference: Optional[PoseVisualsMatplotlib]
-    transformed: Optional[PoseVisualsMatplotlib]
+    query: Optional[PoseVisualsMatplotlib]
 
 
 class ResultScene(SceneInterface):
@@ -94,7 +53,7 @@ class ResultScene(SceneInterface):
         super().__init__(manager)
         self._figure: Optional[Figure] = None
         self._axes: Optional[Axes3D] = None
-        self._visuals = _ResultVisuals(reference=None, transformed=None)
+        self._visuals = _ResultVisuals(reference=None, query=None)
         self._similarity: float = 0.0
         self._info_text = None
 
@@ -139,9 +98,7 @@ class ResultScene(SceneInterface):
         self._close_viewer()
         if self.manager is not None:
             state = self.manager.global_state
-            state.transformed_pose = None
             state.query_pose = None
-            state.similarity = 0.0
             self.manager.start("random_pose")
 
     def _request_quit(self) -> None:
@@ -160,9 +117,9 @@ class ResultScene(SceneInterface):
 
         axes = figure.add_subplot(111, projection="3d")
         axes.set_box_aspect((1.0, 1.0, 1.0))
-        axes.set_xlim(-1.5, 1.5)
-        axes.set_ylim(-1.5, 1.5)
-        axes.set_zlim(-1.5, 1.5)
+        axes.set_xlim(-0.2, 0.2)
+        axes.set_ylim(-0.2, 0.2)
+        axes.set_zlim(-0.2, 0.2)
         axes.view_init(elev=20.0, azim=-60.0)
         axes.set_title("Result")
         axes.xaxis.set_ticklabels([])
@@ -174,40 +131,18 @@ class ResultScene(SceneInterface):
         pose_ref = state.pose if state is not None else None
         pose_query = state.query_pose if state is not None else None
 
-        transformed_pose: Optional[PoseData] = None
+        transformed_ref: Optional[PoseData] = None
         self._similarity = 0.0
 
         if pose_ref is not None and pose_query is not None:
             ref_has_points = pose_ref.keypoints.size > 0
             query_has_points = pose_query.keypoints.size > 0
             if ref_has_points and query_has_points:
-                self._similarity, _ = compute_similarity(pose_ref, pose_query)
-                aligned_world = _align_pose_world(pose_ref, pose_query)
-            else:
-                aligned_world = None
-            if aligned_world is not None:
-                k = aligned_world.shape[0]
-                aligned_world = np.array(aligned_world, copy=True)
-                keypoints = np.array(pose_query.keypoints[:k], copy=True)
-                if keypoints.shape[1] < 3:
-                    keypoints = np.pad(
-                        keypoints,
-                        ((0, 0), (0, 3 - keypoints.shape[1])),
-                        mode="constant",
-                    )
-                visibility = np.array(pose_query.visibility[:k], copy=True)
-                transformed_pose = PoseData(
-                    keypoints=keypoints,
-                    keypoints_world=aligned_world,
-                    visibility=visibility,
-                    image_size=pose_ref.image_size,
+                self._similarity, transformed_ref, transformed_query = (
+                    compute_similarity(pose_ref, pose_query)
                 )
 
-        if state is not None:
-            state.similarity = self._similarity
-            state.transformed_pose = transformed_pose
-
-        self._draw_poses(pose_ref, transformed_pose)
+        self._draw_poses(transformed_ref, transformed_query)
 
         missing: list[str] = []
         if pose_ref is None or pose_ref.keypoints.size == 0:
@@ -249,18 +184,20 @@ class ResultScene(SceneInterface):
         canvas.mpl_connect("close_event", self._on_close_event)
 
     def _draw_poses(
-        self, pose_ref: Optional[PoseData], transformed_pose: Optional[PoseData]
+        self, pose_ref: Optional[PoseData], pose_query: Optional[PoseData]
     ) -> None:
         axes = self._axes
         if axes is None:
             return
 
+        print(pose_query)
+
         if self._visuals.reference is not None:
             dispose_pose_visuals_matplotlib(self._visuals.reference)
             self._visuals.reference = None
-        if self._visuals.transformed is not None:
-            dispose_pose_visuals_matplotlib(self._visuals.transformed)
-            self._visuals.transformed = None
+        if self._visuals.query is not None:
+            dispose_pose_visuals_matplotlib(self._visuals.query)
+            self._visuals.query = None
 
         if pose_ref is not None:
             display_pose = _prepare_pose_for_display(pose_ref)
@@ -285,25 +222,25 @@ class ResultScene(SceneInterface):
                     if callable(set_color):
                         set_color("tab:blue")
 
-        if transformed_pose is not None:
-            display_transformed = _prepare_pose_for_display(transformed_pose)
-            self._visuals.transformed = create_pose_3d_matplotlib(
-                display_transformed,
+        if pose_query is not None:
+            display_transformed_query = _prepare_pose_for_display(pose_query)
+            self._visuals.query = create_pose_3d_matplotlib(
+                display_transformed_query,
                 ax=axes,
                 show_labels=False,
                 visibility_threshold=0.1,
                 normalize=False,
             )
-            if self._visuals.transformed.points is not None:
-                scatter = self._visuals.transformed.points
+            if self._visuals.query.points is not None:
+                scatter = self._visuals.query.points
                 set_facecolor = getattr(scatter, "set_facecolor", None)
                 if callable(set_facecolor):
                     set_facecolor("tab:orange")
                 set_edgecolor = getattr(scatter, "set_edgecolor", None)
                 if callable(set_edgecolor):
                     set_edgecolor("tab:orange")
-            if self._visuals.transformed.segments is not None:
-                for line in self._visuals.transformed.segments:
+            if self._visuals.query.segments is not None:
+                for line in self._visuals.query.segments:
                     set_color = getattr(line, "set_color", None)
                     if callable(set_color):
                         set_color("tab:orange")
@@ -315,9 +252,9 @@ class ResultScene(SceneInterface):
         if self._visuals.reference is not None:
             dispose_pose_visuals_matplotlib(self._visuals.reference)
             self._visuals.reference = None
-        if self._visuals.transformed is not None:
-            dispose_pose_visuals_matplotlib(self._visuals.transformed)
-            self._visuals.transformed = None
+        if self._visuals.query is not None:
+            dispose_pose_visuals_matplotlib(self._visuals.query)
+            self._visuals.query = None
         if self._figure is not None:
             try:
                 plt.close(self._figure)
@@ -331,4 +268,4 @@ class ResultScene(SceneInterface):
             except Exception:
                 pass
         self._info_text = None
-        self._visuals = _ResultVisuals(reference=None, transformed=None)
+        self._visuals = _ResultVisuals(reference=None, query=None)
