@@ -6,10 +6,10 @@ game sequences (start screen, game screen, result screen).
 Implementations are intentionally minimal / interface-like.
 """
 
-from .game import GameScene
-from .result import ResultScene
+from .scenes.game import GameScene
+from .scenes.result import ResultScene
+from .scenes.start import StartScene
 from .sequence import SceneInterface, SequenceManager
-from .start import StartScene
 
 __all__ = [
     "SequenceManager",

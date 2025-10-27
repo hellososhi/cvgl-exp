@@ -23,7 +23,7 @@ def main():
     manager.start("start")
 
     pygame.init()
-    screen = pygame.display.set_mode((640, 480))
+    screen = pygame.display.set_mode((1024, 768))
     clock = pygame.time.Clock()
     running = True
     while running and manager.running:

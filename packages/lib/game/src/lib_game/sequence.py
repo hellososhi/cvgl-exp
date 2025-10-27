@@ -48,6 +48,13 @@ class SceneInterface(abc.ABC):
         return None
 
 
+class GlobalState:
+    """Class to hold global state for the sequence manager and scenes."""
+
+    def __init__(self):
+        pass
+
+
 class SequenceManager:
     """Simple manager for scenes/sequences.
 
@@ -62,6 +69,7 @@ class SequenceManager:
         self._scenes: Dict[str, SceneInterface] = {}
         self._current: Optional[SceneInterface] = None
         self.running: bool = False
+        self.global_state = GlobalState()
 
     def initialize(self) -> None:
         """Initialize manager resources. Call before starting the loop."""

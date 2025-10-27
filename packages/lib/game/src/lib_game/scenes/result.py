@@ -1,4 +1,4 @@
-from .sequence import SceneInterface
+from ..sequence import SceneInterface
 
 
 class ResultScene(SceneInterface):

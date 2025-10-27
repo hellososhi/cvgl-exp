@@ -6,7 +6,7 @@ from lib_pose.detect import PoseEstimator
 from lib_pose.generate_kinematics import generate_random_pose
 from lib_pose.util_2d import draw_keypoints_on_frame, draw_similarity_on_frame
 
-from .sequence import SceneInterface
+from ..sequence import SceneInterface
 
 
 class GameScene(SceneInterface):

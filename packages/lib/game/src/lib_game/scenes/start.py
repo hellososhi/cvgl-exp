@@ -3,7 +3,7 @@ from typing import Optional
 
 import pygame
 
-from .sequence import SceneInterface
+from ..sequence import SceneInterface
 
 
 class StartScene(SceneInterface):
