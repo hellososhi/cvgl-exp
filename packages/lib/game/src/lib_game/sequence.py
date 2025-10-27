@@ -52,8 +52,17 @@ class SceneInterface(abc.ABC):
 class GlobalState:
     """Class to hold global state for the sequence manager and scenes."""
 
-    def __init__(self, pose: Optional[PoseData] = None) -> None:
+    def __init__(
+        self,
+        pose: Optional[PoseData] = None,
+        query_pose: Optional[PoseData] = None,
+        transformed_pose: Optional[PoseData] = None,
+        similarity: float = 0.0,
+    ) -> None:
         self.pose = pose
+        self.query_pose = query_pose
+        self.transformed_pose = transformed_pose
+        self.similarity = similarity
 
 
 class SequenceManager:

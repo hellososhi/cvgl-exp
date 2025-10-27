@@ -63,7 +63,7 @@ def run(
                 # 参照画像注釈は既に注釈済み画像を表示
                 draw_keypoints_on_frame(ref, ref_pose)
 
-                sim = compute_similarity(ref_pose, query_pose, method=method)
+                sim, _ = compute_similarity(ref_pose, query_pose, method=method)
                 print(f"Similarity: {sim:.3f}")
                 flipped = cv2.flip(frame, 1)
                 draw_similarity_on_frame(flipped, sim)

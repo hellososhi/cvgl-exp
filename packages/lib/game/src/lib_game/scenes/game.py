@@ -15,6 +15,7 @@ class GameScene(SceneInterface):
         self._estimator = None
         self.last_frame = None
         self.last_similarity = 0.0
+        self._last_pose_data = None
 
     def enter(self):
         """Open camera and prepare pose estimator and reference pose.
@@ -40,6 +41,7 @@ class GameScene(SceneInterface):
 
         self.last_frame = None
         self.last_similarity = 0.0
+        self._last_pose_data = None
 
     def exit(self):
         print("GameScene: exit")
@@ -49,6 +51,7 @@ class GameScene(SceneInterface):
             self.cap.release()
         self._estimator = None
         self.cap = None
+        self._last_pose_data = None
 
     def update(self, dt: float) -> None:
         """Capture a frame, run pose estimation and compute similarity.
@@ -68,11 +71,15 @@ class GameScene(SceneInterface):
 
         # use the estimator to get PoseData
         pose = self._estimator.process_frame(frame)
+        self._last_pose_data = pose
+        if self.manager is not None:
+            state = self.manager.global_state
+            state.query_pose = pose
 
         # compute similarity
         sim = 0.0
         if self.reference_pose:
-            sim = compute_similarity(self.reference_pose, pose)
+            sim, _ = compute_similarity(self.reference_pose, pose)
 
         # draw overlays directly onto a copy of the frame (BGR)
         vis_frame = frame.copy()
@@ -80,7 +87,10 @@ class GameScene(SceneInterface):
         draw_similarity_on_frame(vis_frame, sim)
 
         self.last_frame = vis_frame
-        self.last_similarity = float(sim)
+        self.last_similarity = sim
+        if self.manager is not None:
+            state = self.manager.global_state
+            state.similarity = sim
 
     def render(self, surface):
         """Convert the last processed frame to a pygame surface and blit it.
@@ -121,7 +131,14 @@ class GameScene(SceneInterface):
             if event.key == pygame.K_ESCAPE:
                 # go to result scene
                 if self.manager is not None:
+                    state = self.manager.global_state
+                    if self._last_pose_data is not None:
+                        state.query_pose = self._last_pose_data
                     self.manager.start("result")
             elif event.key == pygame.K_SPACE:
                 if self.manager is not None:
+                    state = self.manager.global_state
+                    state.query_pose = None
+                    state.similarity = 0.0
+                    state.transformed_pose = None
                     self.manager.start("start")
