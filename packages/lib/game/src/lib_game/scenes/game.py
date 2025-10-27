@@ -92,12 +92,10 @@ class GameScene(SceneInterface):
             print("GameScene: failed to read frame from camera")
             return
 
-        # mirror frame horizontally for display and estimation consistency
-        frame = np.ascontiguousarray(frame[:, ::-1, :])
-
         # use the estimator to get PoseData
         pose = self._estimator.process_frame(frame)
         self._last_pose_data = pose
+        self._flip_pose_data_x(pose)
         if self.manager is not None:
             state = self.manager.global_state
             state.query_pose = pose
@@ -107,7 +105,9 @@ class GameScene(SceneInterface):
         if self.reference_pose:
             sim, _, _ = compute_similarity(self.reference_pose, pose)
 
-        self.last_frame = frame
+        # mirror only for the user-facing preview surface
+        display_frame = np.ascontiguousarray(frame[:, ::-1, :])
+        self.last_frame = display_frame
         self.last_similarity = sim
         self._remaining_time = max(
             self._auto_transition_delay - self._time_since_enter, 0.0
@@ -123,6 +123,23 @@ class GameScene(SceneInterface):
                 if self._last_pose_data is not None:
                     state.query_pose = self._last_pose_data
                 self.manager.start("result")
+
+    @staticmethod
+    def _flip_pose_data_x(pose):
+        if pose is None:
+            return
+
+        keypoints = getattr(pose, "keypoints", None)
+        if keypoints is not None and keypoints.size > 0 and keypoints.shape[1] > 0:
+            keypoints[:, 0] *= -1.0
+
+        keypoints_world = getattr(pose, "keypoints_world", None)
+        if (
+            keypoints_world is not None
+            and keypoints_world.size > 0
+            and keypoints_world.shape[1] > 0
+        ):
+            keypoints_world[:, 0] *= -1.0
 
     def render(self, surface):
         """Convert the last processed frame to a pygame surface and blit it.

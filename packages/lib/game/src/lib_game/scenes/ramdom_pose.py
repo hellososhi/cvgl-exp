@@ -115,9 +115,9 @@ class RandomPoseScene(SceneInterface):
 
         axes = figure.add_subplot(111, projection="3d")
         axes.set_box_aspect((1.0, 1.0, 1.0))
-        axes.set_xlim(-1.5, 1.5)
-        axes.set_ylim(-1.5, 1.5)
-        axes.set_zlim(-1.5, 1.5)
+        axes.set_xlim(-2.0, 2.0)
+        axes.set_ylim(-2.0, 2.0)
+        axes.set_zlim(-2.5, 1.5)
         axes.view_init(elev=self._base_elev, azim=self._base_azim)
         axes.xaxis.set_ticklabels([])
         axes.yaxis.set_ticklabels([])
