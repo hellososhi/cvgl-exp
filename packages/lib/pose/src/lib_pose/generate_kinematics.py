@@ -474,33 +474,35 @@ def _propagate_upper_limbs(
             wrist_frame = _apply_hinge_rotation(wrist_frame, wrist_angle)
         frames[wrist_name] = wrist_frame
 
-    for digit_name, yaw_offset, roll_offset in digits:
-        length = _bone_length(wrist_name, digit_name)
-        direction = wrist_frame.forward.copy()
-        if yaw_offset != 0.0:
-            direction = _axis_angle_rotation(wrist_frame.up, yaw_offset) @ direction
-        if roll_offset != 0.0:
-            direction = _axis_angle_rotation(wrist_frame.right, roll_offset) @ direction
-        direction = _normalize(direction)
-        digit_position = wrist_frame.position + direction * length
-        joints[digit_name][:] = digit_position
+        for digit_name, yaw_offset, roll_offset in digits:
+            length = _bone_length(wrist_name, digit_name)
+            direction = wrist_frame.forward.copy()
+            if yaw_offset != 0.0:
+                direction = _axis_angle_rotation(wrist_frame.up, yaw_offset) @ direction
+            if roll_offset != 0.0:
+                direction = (
+                    _axis_angle_rotation(wrist_frame.right, roll_offset) @ direction
+                )
+            direction = _normalize(direction)
+            digit_position = wrist_frame.position + direction * length
+            joints[digit_name][:] = digit_position
 
-        tentative_up = _normalize(wrist_frame.up.copy())
-        tentative_right = np.cross(direction, tentative_up)
-        if float(np.linalg.norm(tentative_right)) < 1e-6:
-            tentative_right = _normalize(wrist_frame.right.copy())
-            tentative_up = _normalize(np.cross(tentative_right, direction))
-        else:
-            tentative_right = _normalize(tentative_right)
-            tentative_up = _normalize(np.cross(tentative_right, direction))
+            tentative_up = _normalize(wrist_frame.up.copy())
+            tentative_right = np.cross(direction, tentative_up)
+            if float(np.linalg.norm(tentative_right)) < 1e-6:
+                tentative_right = _normalize(wrist_frame.right.copy())
+                tentative_up = _normalize(np.cross(tentative_right, direction))
+            else:
+                tentative_right = _normalize(tentative_right)
+                tentative_up = _normalize(np.cross(tentative_right, direction))
 
-        frames[digit_name] = JointFrame(
-            position=digit_position,
-            forward=direction,
-            up=tentative_up,
-            right=tentative_right,
-            parent=wrist_name,
-        )
+            frames[digit_name] = JointFrame(
+                position=digit_position,
+                forward=direction,
+                up=tentative_up,
+                right=tentative_right,
+                parent=wrist_name,
+            )
 
 
 def _propagate_lower_limbs(
