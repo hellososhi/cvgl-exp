@@ -163,23 +163,23 @@ POSE_SAMPLE_BONE_LENGTHS = {
 JOINT_ANGLE_LIMITS: Dict[str, Dict[str, Tuple[float, float]] | Tuple[float, float]] = {
     "left_shoulder": {
         "yaw": (-np.deg2rad(0.0), np.deg2rad(0.0)),
-        "pitch": (-np.deg2rad(210.0), -np.deg2rad(210.0)),
+        "pitch": (-np.deg2rad(45.0), np.deg2rad(210.0)),
         "roll": (-np.deg2rad(60.0), np.deg2rad(60.0)),
     },
     "right_shoulder": {
-        "yaw": (-np.deg2rad(90.0), np.deg2rad(90.0)),
+        "yaw": (-np.deg2rad(0.0), np.deg2rad(0.0)),
         "pitch": (-np.deg2rad(210.0), np.deg2rad(45.0)),
-        "roll": (-np.deg2rad(60.0), np.deg2rad(60.0)),
+        "roll": (-np.deg2rad(180.0), -np.deg2rad(180.0)),
     },
     "left_hip": {
         "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
-        "pitch": (-np.deg2rad(300.0), -np.deg2rad(120.0)),
+        "pitch": (-np.deg2rad(300.0), -np.deg2rad(150.0)),
         "roll": (-np.deg2rad(40.0), np.deg2rad(40.0)),
     },
     "right_hip": {
         "yaw": (-np.deg2rad(75.0), np.deg2rad(75.0)),
-        "pitch": (-np.deg2rad(300.0), -np.deg2rad(120.0)),
-        "roll": (-np.deg2rad(40.0), np.deg2rad(40.0)),
+        "pitch": (-np.deg2rad(210.0), -np.deg2rad(60.0)),
+        "roll": (-np.deg2rad(220.0), -np.deg2rad(140.0)),
     },
     "left_elbow": (-np.deg2rad(5.0), np.deg2rad(150.0)),
     "right_elbow": (-np.deg2rad(5.0), np.deg2rad(150.0)),

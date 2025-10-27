@@ -4,7 +4,7 @@ import math
 from typing import Optional
 
 import numpy as np
-from lib_pose.data import PoseData
+from lib_pose.data import POSE_LANDMARKS, PoseData
 from lib_pose.demo.pose_3d_matplotlib import (
     PoseVisualsMatplotlib,
     create_pose_3d_matplotlib,
@@ -14,6 +14,7 @@ from lib_pose.generate_kinematics import generate_random_pose
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ..sequence import SceneInterface, SequenceManager
 
@@ -60,6 +61,7 @@ class RandomPoseScene(SceneInterface):
         self._transitioned = False
         self._base_elev = 20.0
         self._base_azim = -60.0
+        self._direction_arrow: Optional[Line3DCollection] = None
 
     def enter(self) -> None:
         print("RandomPoseScene: enter")
@@ -136,6 +138,9 @@ class RandomPoseScene(SceneInterface):
             normalize=False,
         )
 
+        arrow = self._create_direction_arrow(axes, pose_for_display)
+        self._direction_arrow = arrow
+
         # Draw once to ensure the window is ready before the game loop continues.
         canvas = figure.canvas
         canvas.draw_idle()
@@ -150,6 +155,12 @@ class RandomPoseScene(SceneInterface):
         if self._pose_visuals is not None:
             dispose_pose_visuals_matplotlib(self._pose_visuals)
             self._pose_visuals = None
+            if self._direction_arrow is not None:
+                try:
+                    self._direction_arrow.remove()
+                except Exception:
+                    pass
+                self._direction_arrow = None
         if self._figure is not None:
             try:
                 plt.close(self._figure)
@@ -165,3 +176,34 @@ class RandomPoseScene(SceneInterface):
         self._close_viewer()
         if self.manager is not None:
             self.manager.start("game")
+
+    def _create_direction_arrow(
+        self, axes: Axes3D, pose: PoseData
+    ) -> Optional[Line3DCollection]:
+        index = POSE_LANDMARKS.get("neck_top")
+        if index is None:
+            return None
+        world = pose.keypoints_world
+        if world.size == 0 or index >= world.shape[0]:
+            return None
+
+        # Map to matplotlib coordinate order used by the pose renderer: X, Z, Y.
+        start_x = float(world[index, 0])
+        start_y = float(world[index, 2])
+        start_z = float(world[index, 1])
+        arrow_length = 0.5
+
+        try:
+            return axes.quiver(
+                start_x,
+                start_y,
+                start_z,
+                0.0,
+                arrow_length,
+                0.0,
+                color="g",
+                linewidth=2.0,
+                arrow_length_ratio=0.2,
+            )
+        except Exception:
+            return None
