@@ -75,47 +75,29 @@ class SequenceManager:
     def start(self, name: str) -> None:
         """Switch to the named scene, calling lifecycle hooks."""
         if self._current is not None:
-            try:
-                self._current.exit()
-            except Exception:
-                pass
+            self._current.exit()
 
         self._current = self._scenes.get(name)
         if self._current is not None:
-            try:
-                self._current.enter()
-            except Exception:
-                pass
+            self._current.enter()
 
     def update(self, dt: float) -> None:
         """Forward update to current scene."""
         if self._current is not None:
-            try:
-                self._current.update(dt)
-            except Exception:
-                pass
+            self._current.update(dt)
 
     def render(self, surface: Any) -> None:
         """Forward render to current scene."""
         if self._current is not None:
-            try:
-                self._current.render(surface)
-            except Exception:
-                pass
+            self._current.render(surface)
 
     def handle_event(self, event: Any) -> None:
         """Forward event to current scene."""
         if self._current is not None:
-            try:
-                self._current.handle_event(event)
-            except Exception:
-                pass
+            self._current.handle_event(event)
 
     def shutdown(self) -> None:
         """Shutdown manager and active scene."""
         if self._current is not None:
-            try:
-                self._current.exit()
-            except Exception:
-                pass
+            self._current.exit()
         self.running = False

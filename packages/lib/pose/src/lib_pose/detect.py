@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional, Tuple
 
 import cv2
@@ -129,12 +130,13 @@ class PoseEstimator:
 
     def __init__(
         self,
-        model_asset_path: str = "pose_landmarker_full.task",
+        model_file: str = "pose_landmarker_full.task",
         enable_segmentation: bool = False,
         min_detection_confidence: float = 0.5,
         min_presence_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
     ):
+        model_asset_path = os.path.join(os.path.dirname(__file__), "models", model_file)
         base_options = BaseOptions(model_asset_path=model_asset_path)
         options = PoseLandmarkerOptions(
             base_options=base_options,
