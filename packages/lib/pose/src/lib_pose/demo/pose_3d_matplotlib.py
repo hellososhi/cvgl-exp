@@ -14,7 +14,7 @@ from lib_pose.util_2d import draw_keypoints_on_frame
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.artist import Artist
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (required for 3D projection)
+from scipy.__config__ import show  # noqa: F401 (required for 3D projection)
 
 INDEX_TO_LABEL = {index: name for name, index in POSE_LANDMARKS.items()}
 
@@ -55,6 +55,7 @@ def create_pose_3d_matplotlib(
     pose: PoseData,
     *,
     ax,
+    show_labels: bool = True,
     visibility_threshold: float = 0.0,
     normalize: bool = True,
     translate: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -112,29 +113,30 @@ def create_pose_3d_matplotlib(
 
     # Labels
     labels: List[Artist] = []
-    for idx, is_visible in enumerate(visible_mask):
-        if not is_visible:
-            continue
-        if idx >= plot_coords.shape[0]:
-            continue
-        label = INDEX_TO_LABEL.get(idx, str(idx))
-        text = ax.text(
-            float(plot_coords[idx, 0]),
-            float(plot_coords[idx, 1]),
-            float(plot_coords[idx, 2]),
-            label,
-            fontsize=8,
-            color="black",
-            ha="center",
-            va="center",
-            bbox={
-                "boxstyle": "round,pad=0.2",
-                "fc": "none",
-                "ec": "none",
-                "alpha": 0.7,
-            },
-        )
-        labels.append(text)
+    if show_labels:
+        for idx, is_visible in enumerate(visible_mask):
+            if not is_visible:
+                continue
+            if idx >= plot_coords.shape[0]:
+                continue
+            label = INDEX_TO_LABEL.get(idx, str(idx))
+            text = ax.text(
+                float(plot_coords[idx, 0]),
+                float(plot_coords[idx, 1]),
+                float(plot_coords[idx, 2]),
+                label,
+                fontsize=8,
+                color="black",
+                ha="center",
+                va="center",
+                bbox={
+                    "boxstyle": "round,pad=0.2",
+                    "fc": "none",
+                    "ec": "none",
+                    "alpha": 0.7,
+                },
+            )
+            labels.append(text)
 
     return PoseVisualsMatplotlib(points=points, segments=segment_lines, labels=labels)
 

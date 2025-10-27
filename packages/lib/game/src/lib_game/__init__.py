@@ -7,6 +7,7 @@ Implementations are intentionally minimal / interface-like.
 """
 
 from .scenes.game import GameScene
+from .scenes.ramdom_pose import RandomPoseScene
 from .scenes.result import ResultScene
 from .scenes.start import StartScene
 from .sequence import SceneInterface, SequenceManager
@@ -14,7 +15,8 @@ from .sequence import SceneInterface, SequenceManager
 __all__ = [
     "SequenceManager",
     "SceneInterface",
-    "GameScene",
     "StartScene",
+    "RandomPoseScene",
+    "GameScene",
     "ResultScene",
 ]

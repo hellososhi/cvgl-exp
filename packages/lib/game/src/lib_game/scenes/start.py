@@ -81,4 +81,4 @@ class StartScene(SceneInterface):
             # start the game when user presses 's'
             if event.key == pygame.K_s:
                 if self.manager is not None:
-                    self.manager.start("game")
+                    self.manager.start("random_pose")

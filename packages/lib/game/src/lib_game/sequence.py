@@ -11,6 +11,7 @@ import abc
 from typing import Any, Dict, Optional
 
 import pygame
+from lib_pose import PoseData
 
 
 class SceneInterface(abc.ABC):
@@ -51,8 +52,8 @@ class SceneInterface(abc.ABC):
 class GlobalState:
     """Class to hold global state for the sequence manager and scenes."""
 
-    def __init__(self):
-        pass
+    def __init__(self, pose: Optional[PoseData] = None) -> None:
+        self.pose = pose
 
 
 class SequenceManager:

@@ -3,7 +3,6 @@ import numpy as np
 import pygame
 from lib_pose import compute_similarity
 from lib_pose.detect import PoseEstimator
-from lib_pose.generate_kinematics import generate_random_pose
 from lib_pose.util_2d import draw_keypoints_on_frame, draw_similarity_on_frame
 
 from ..sequence import SceneInterface
@@ -14,7 +13,6 @@ class GameScene(SceneInterface):
         super().__init__(manager)
         self.cap = None
         self._estimator = None
-        self.reference_pose = None
         self.last_frame = None
         self.last_similarity = 0.0
 
@@ -36,7 +34,9 @@ class GameScene(SceneInterface):
             raise RuntimeError("Could not create PoseEstimator")
 
         # generate a random reference pose to match against
-        self.reference_pose = generate_random_pose()
+        if self.manager is None:
+            raise RuntimeError("GameScene: no manager assigned")
+        self.reference_pose = self.manager.global_state.pose
 
         self.last_frame = None
         self.last_similarity = 0.0

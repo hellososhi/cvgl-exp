@@ -1,5 +1,11 @@
 import pygame
-from lib_game import GameScene, ResultScene, SequenceManager, StartScene
+from lib_game import (
+    GameScene,
+    RandomPoseScene,
+    ResultScene,
+    SequenceManager,
+    StartScene,
+)
 
 """App entrypoint that demonstrates the lib_game sequence interface.
 
@@ -16,6 +22,7 @@ def main():
 
     # register minimal placeholder scenes
     manager.register_scene("start", StartScene())
+    manager.register_scene("random_pose", RandomPoseScene())
     manager.register_scene("game", GameScene())
     manager.register_scene("result", ResultScene())
 
