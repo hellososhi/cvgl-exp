@@ -1,3 +1,6 @@
+import os
+
+import cv2
 import pygame
 from lib_game import (
     GameScene,
@@ -28,6 +31,13 @@ def main():
 
     # start with the start scene
     manager.start("start")
+
+    cap = cv2.VideoCapture(1)
+    if not cap.isOpened():
+        raise RuntimeError("Could not open camera")
+    manager.global_state.camera = cap
+
+    os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (500, 500)
 
     pygame.init()
     screen = pygame.display.set_mode((1024, 576))

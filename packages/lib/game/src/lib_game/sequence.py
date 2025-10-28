@@ -10,6 +10,7 @@ from __future__ import annotations
 import abc
 from typing import Any, Dict, Optional
 
+import cv2
 import pygame
 from lib_pose import PoseData
 
@@ -56,9 +57,11 @@ class GlobalState:
         self,
         pose: Optional[PoseData] = None,
         query_pose: Optional[PoseData] = None,
+        camera: Optional[cv2.VideoCapture] = None,
     ) -> None:
         self.pose = pose
         self.query_pose = query_pose
+        self.camera = camera
 
 
 class SequenceManager:

@@ -110,7 +110,7 @@ class ResultScene(SceneInterface):
         self._close_viewer()
 
         plt.ion()
-        self._figure = plt.figure(figsize=(8, 6))
+        self._figure = plt.figure(figsize=(6, 4.3))
         figure = self._figure
         if figure is None:
             return
