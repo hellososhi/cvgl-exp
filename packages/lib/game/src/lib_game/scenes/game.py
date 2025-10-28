@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import pygame
-from lib_pose import compute_similarity, draw_keypoints_on_frame
+from lib_pose import compute_similarity
 from lib_pose.detect import PoseEstimator
 
 from ..sequence import SceneInterface
@@ -35,7 +35,7 @@ class GameScene(SceneInterface):
         self.cap = self.manager.global_state.camera
 
         # long-lived estimator
-        self._estimator = PoseEstimator()
+        self._estimator = PoseEstimator(model_file="pose_landmarker_heavy.task")
         if self._estimator is None:
             raise RuntimeError("Could not create PoseEstimator")
 
@@ -108,9 +108,9 @@ class GameScene(SceneInterface):
         # mirror only for the user-facing preview surface
         display_frame = np.ascontiguousarray(frame[:, ::-1, :])
         print(pose)
-        display_frame.flags.writeable = True
-        draw_keypoints_on_frame(display_frame, pose)  # for debug
-        display_frame.flags.writeable = False
+        # display_frame.flags.writeable = True
+        # draw_keypoints_on_frame(display_frame, pose)  # for debug
+        # display_frame.flags.writeable = False
         self.last_frame = display_frame
         self.last_similarity = sim
         self._remaining_time = max(
